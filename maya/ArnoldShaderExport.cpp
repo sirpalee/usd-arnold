@@ -23,6 +23,8 @@
 #include <maya/MPlugArray.h>
 #include <maya/MStringArray.h>
 
+#include <iostream>
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 namespace {
@@ -166,13 +168,26 @@ void ArnoldShaderExport::setup_shader(const MDagPath& dg, const SdfPath& path) {
         MFnDependencyNode node(shape_obj);
         auto plug = node.findPlug(out_shader_plug);
         MPlugArray conns;
-        plug.elementByLogicalIndex(instance_num)
-            .connectedTo(conns, false, true);
-        const auto conns_length = conns.length();
+        plug = plug.elementByLogicalIndex(instance_num);
+            plug.connectedTo(conns, false, true);
+        auto conns_length = conns.length();
         for (auto i = decltype(conns_length){0}; i < conns_length; ++i) {
             const auto splug = conns[i];
             const auto sobj = splug.node();
             if (sobj.apiType() == MFn::kShadingEngine) { return sobj; }
+        }
+        // Object is empty, take a look at per face assignments and grab the first one.
+        MObject obg = MFnDependencyNode(shape_obj).attribute("objectGroups");
+        plug = plug.child(obg);
+        int elements = plug.evaluateNumElements();
+        for (int j = 0; j < elements; ++j) {
+            plug.elementByPhysicalIndex(j).connectedTo(conns, false, true);
+            conns_length = conns.length();
+            for (auto i = decltype(conns_length){0}; i < conns_length; ++i) {
+                const auto splug = conns[i];
+                const auto sobj = splug.node();
+                if (sobj.apiType() == MFn::kShadingEngine) { return sobj; }
+            }
         }
         return MObject();
     };

@@ -15,6 +15,7 @@
 
 #include "pxr/base/gf/matrix4f.h"
 #include "pxr/usd/sdf/types.h"
+#include "pxr/usd/sdf/types.h"
 #include "pxr/usd/usd/primRange.h"
 #include "pxr/usd/usd/relationship.h"
 #include "pxr/usd/usdAi/aiMaterialAPI.h"
@@ -438,7 +439,7 @@ void AiShaderExport::clean_arnold_name(std::string& name) {
 }
 
 bool AiShaderExport::get_output(
-    const AtNode* src_arnold_node, UsdAiShader& src_shader, UsdShadeOutput& out,
+    const AtNode* src_arnold_node, UsdShadeShader& src_shader, UsdShadeOutput& out,
     bool is_node_type, int32_t src_comp_index) {
     UsdShadeConnectableAPI linked_API(src_shader);
     const auto linked_output_type =
@@ -453,7 +454,7 @@ bool AiShaderExport::get_output(
 }
 
 bool AiShaderExport::export_connection(
-    const AtNode* dest_arnold_node, UsdAiShader& dest_shader,
+    const AtNode* dest_arnold_node, UsdShadeShader& dest_shader,
     const std::string& dest_param_name,
     const std::string& dest_param_arnold_name, uint8_t arnold_param_type) {
     const auto iter_type = get_param_conversion(arnold_param_type);
@@ -474,7 +475,7 @@ bool AiShaderExport::export_connection(
                 AI_NODE_SHADER) {
             const auto src_path =
                 export_arnold_node(src_arnold_node, m_shaders_scope);
-            auto src_shader = UsdAiShader::Get(m_stage, src_path);
+            auto src_shader = UsdShadeShader::Get(m_stage, src_path);
             // FIXME: check for invalid src_shader
             return this->get_output(
                 src_arnold_node, src_shader, out,
@@ -520,9 +521,9 @@ bool AiShaderExport::export_connection(
 
 // bool
 // AiShaderExport::export_connection(const AtNode* dest_arnold_node,
-// UsdAiShader& dest_shader,
+// UsdShadeShader& dest_shader,
 //                                   const char* dest_param_name,
-//                                   const AtNode* src_arnold_node, UsdAiShader&
+//                                   const AtNode* src_arnold_node, UsdShadeShader&
 //                                   src_shader, int32_t src_comp_index) {
 //     const auto pentry =
 //     AiNodeEntryLookUpParameter(AiNodeGetNodeEntry(dest_arnold_node),
@@ -534,9 +535,9 @@ bool AiShaderExport::export_connection(
 // }
 
 bool AiShaderExport::export_connection(
-    const AtNode* dest_arnold_node, UsdAiShader& dest_shader,
+    const AtNode* dest_arnold_node, UsdShadeShader& dest_shader,
     const char* dest_param_name, const AtNode* src_arnold_node,
-    UsdAiShader& src_shader, int32_t src_comp_index) {
+    UsdShadeShader& src_shader, int32_t src_comp_index) {
     // const auto iter_type = get_param_conversion(arnold_param_type);
     // if (iter_type == nullptr) {
     //     return false;
@@ -553,7 +554,7 @@ bool AiShaderExport::export_connection(
 }
 
 void AiShaderExport::export_parameter(
-    const AtNode* arnold_node, UsdAiShader& shader,
+    const AtNode* arnold_node, UsdShadeShader& shader,
     const char* arnold_param_name, uint8_t arnold_param_type, bool user) {
     if (arnold_param_type == AI_TYPE_ARRAY) {
         const auto arr = AiNodeGetArray(arnold_node, arnold_param_name);
@@ -641,7 +642,7 @@ SdfPath AiShaderExport::export_arnold_node(
     // TODO: implement a proper cleanup using boost::regex
     clean_arnold_name(node_name);
     auto shader_path = parent_path.AppendPath(SdfPath(node_name));
-    auto shader = UsdAiShader::Define(m_stage, shader_path);
+    auto shader = UsdShadeShader::Define(m_stage, shader_path);
     m_shader_to_usd_path.insert(std::make_pair(arnold_node, shader_path));
 
     shader.CreateIdAttr(VtValue(TfToken(AiNodeEntryGetName(nentry))));
@@ -699,8 +700,7 @@ SdfPath AiShaderExport::export_material(
         // already exists and setup
         return material_path;
     }
-    auto material =
-        UsdAiMaterialAPI(UsdShadeMaterial::Define(m_stage, material_path));
+    auto material = UsdShadeMaterial::Define(m_stage, material_path);
 
     if (surf_shader != nullptr) {
         // We are looking at two cases here. If we are exporting from maya, the
@@ -716,16 +716,18 @@ SdfPath AiShaderExport::export_material(
             surf_path = export_arnold_node(surf_shader, m_shaders_scope);
         }
         if (!surf_path.IsEmpty()) {
-            auto rel = material.CreateSurfaceRel();
-            rel.AddTarget(surf_path);
+            auto out = material.CreateSurfaceOutput(TfToken("arnold"));
+            auto shader = UsdShadeShader::Get(m_stage, surf_path);
+            out.ConnectToSource(shader.CreateOutput(TfToken("out"), SdfValueTypeNames->Token));
         }
     }
 
     if (disp_shader != nullptr) {
         auto disp_path = export_arnold_node(disp_shader, m_shaders_scope);
         if (!disp_path.IsEmpty()) {
-            auto rel = material.CreateDisplacementRel();
-            rel.AddTarget(disp_path);
+            auto out = material.CreateDisplacementOutput(TfToken("arnold"));
+            auto shader = UsdShadeShader::Get(m_stage, disp_path);
+            out.ConnectToSource(shader.CreateOutput(TfToken("out"), SdfValueTypeNames->Token));
         }
     }
     return material_path;

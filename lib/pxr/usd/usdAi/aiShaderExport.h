@@ -38,25 +38,25 @@ public:
         const std::set<std::string>* exportable_params = nullptr);
     static void clean_arnold_name(std::string& name);
     bool get_output(
-        const AtNode* src_arnold_node, UsdAiShader& src_shader,
+        const AtNode* src_arnold_node, UsdShadeShader& src_shader,
         UsdShadeOutput& out, bool is_node_type = false,
         int32_t comp_index = -1);
     bool export_connection(
-        const AtNode* dest_arnold_node, UsdAiShader& dest_shader,
+        const AtNode* dest_arnold_node, UsdShadeShader& dest_shader,
         const std::string& dest_param_name,
         const std::string& dest_param_arnold_name, uint8_t arnold_param_type);
     bool export_connection(
-        const AtNode* dest_arnold_node, UsdAiShader& dest_shader,
+        const AtNode* dest_arnold_node, UsdShadeShader& dest_shader,
         const char* dest_param_name, const AtNode* src_arnold_node,
-        UsdAiShader& src_shader, int32_t src_comp_index = -1);
-    // bool export_connection(const AtNode* dest_arnold_node, UsdAiShader&
+        UsdShadeShader& src_shader, int32_t src_comp_index = -1);
+    // bool export_connection(const AtNode* dest_arnold_node, UsdShadeShader&
     // dest_shader,
     //                        const char* dest_param_name, uint8_t
     //                        arnold_param_type, const AtNode* src_arnold_node,
-    //                        UsdAiShader& src_shader, int32_t
+    //                        UsdShadeShader& src_shader, int32_t
     //                        src_comp_index=-1);
     void export_parameter(
-        const AtNode* arnold_node, UsdAiShader& shader,
+        const AtNode* arnold_node, UsdShadeShader& shader,
         const char* arnold_param_name, uint8_t arnold_param_type, bool user);
     void collapse_shaders();
 
