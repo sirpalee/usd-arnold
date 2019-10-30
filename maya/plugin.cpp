@@ -16,7 +16,6 @@
 
 #include <usdMaya/shadingModeExporter.h>
 #include <usdMaya/shadingModeRegistry.h>
-#include <usdMaya/userAttributeWriterRegistry.h>
 
 #include "ArnoldShaderExport.h"
 
@@ -63,16 +62,6 @@ TF_REGISTRY_FUNCTION_WITH_TAG(UsdMayaShadingModeExportContext, arnold) {
             return UsdMayaShadingModeExporterPtr(
                 static_cast<UsdMayaShadingModeExporter*>(
                     new ArnoldShadingModeExporter()));
-        });
-}
-
-TF_REGISTRY_FUNCTION_WITH_TAG(UsdMayaUserAttributeWriterRegistry, usdAi) {
-    UsdMayaUserAttributeWriterRegistry::RegisterWriter(
-        "usdAi",
-        [](const MPlug& attrPlug, const UsdPrim& usdPrim,
-           const std::string& attrName, const std::string& nameSpace,
-           const bool translateMayaDoubleToUsdSinglePrecision) -> UsdAttribute {
-            return UsdAttribute();
         });
 }
 
